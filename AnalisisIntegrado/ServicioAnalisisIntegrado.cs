@@ -445,8 +445,8 @@ namespace DotnetCoreYolo.AnalisisIntegrado
         public bool HabilitarClasificacion { get; set; } = true;
         public bool GuardarResultados { get; set; } = true;
         public string DirectorioSalida { get; set; } = ".";
-        public float UmbralConfianza { get; set; } = 0.007f;
-        public float UmbralIoU { get; set; } = 0.65f;
+        public float UmbralConfianza { get; set; } = 0.01f;
+        public float UmbralIoU { get; set; } = 0.75f;
         public int MaxDetecciones { get; set; } = 15;
         public bool GenerarReporte { get; set; } = true;
     }
