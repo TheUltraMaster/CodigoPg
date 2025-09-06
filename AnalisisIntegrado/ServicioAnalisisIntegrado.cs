@@ -74,7 +74,7 @@ namespace DotnetCoreYolo.AnalisisIntegrado
                 {
                     // Extraer regiones de hojas para clasificación en paralelo
                     var hojasClasificadas = await ClasificarHojasDetectadasParalelo(rutaImagen, resultadoDeteccion.Detections);
-                    
+
                     // Calcular tiempo total de clasificación sumando tiempos individuales
                     resultado.TiempoClasificacion = TimeSpan.FromTicks(hojasClasificadas.Sum(h => h.TiempoClasificacion.Ticks));
 
@@ -156,17 +156,17 @@ namespace DotnetCoreYolo.AnalisisIntegrado
                     try
                     {
                         var cronometroHoja = Stopwatch.StartNew();
-                        
+
                         // Extraer región de la hoja con padding
                         var padding = 10;
                         var x1 = Math.Max(0, deteccion.BBox[0] - padding);
                         var y1 = Math.Max(0, deteccion.BBox[1] - padding);
                         var x2 = Math.Min(imagenOriginal.Width, deteccion.BBox[2] + padding);
                         var y2 = Math.Min(imagenOriginal.Height, deteccion.BBox[3] + padding);
-                        
+
                         var ancho = x2 - x1;
                         var alto = y2 - y1;
-                        
+
                         Image<Rgb24>? imagenRecortada = null;
                         try
                         {
@@ -175,19 +175,19 @@ namespace DotnetCoreYolo.AnalisisIntegrado
                             {
                                 imagenRecortada = imagenOriginal.Clone();
                             }
-                            
+
                             imagenRecortada.Mutate(x => x.Crop(new Rectangle(x1, y1, ancho, alto)));
-                            
+
                             // Convertir a bytes para clasificación directa
                             using var memoryStream = new MemoryStream();
                             imagenRecortada.SaveAsPng(memoryStream);
                             var imageBytes = memoryStream.ToArray();
-                            
+
                             // Guardar los datos de la imagen
                             hojaIntegrada.DatosImagen = imageBytes;
-                            
+
                             var resultadoClasificacion = _clasificador.ClassifyImageFromBytes(imageBytes, $"leaf_{deteccion.Id}");
-                            
+
                             if (!string.IsNullOrEmpty(resultadoClasificacion.PredictedClass) && resultadoClasificacion.PredictedClass != "Error")
                             {
                                 hojaIntegrada.EtiquetaClasificacion = resultadoClasificacion.PredictedClass;
@@ -205,7 +205,7 @@ namespace DotnetCoreYolo.AnalisisIntegrado
                         {
                             imagenRecortada?.Dispose();
                         }
-                        
+
                         cronometroHoja.Stop();
                         hojaIntegrada.TiempoClasificacion = cronometroHoja.Elapsed;
                     }
@@ -261,10 +261,10 @@ namespace DotnetCoreYolo.AnalisisIntegrado
                         var y1 = Math.Max(0, deteccion.BBox[1] - padding);
                         var x2 = Math.Min(imagenOriginal.Width, deteccion.BBox[2] + padding);
                         var y2 = Math.Min(imagenOriginal.Height, deteccion.BBox[3] + padding);
-                        
+
                         var ancho = x2 - x1;
                         var alto = y2 - y1;
-                        
+
                         Image<Rgb24>? imagenRecortada = null;
                         try
                         {
@@ -273,9 +273,9 @@ namespace DotnetCoreYolo.AnalisisIntegrado
                             {
                                 imagenRecortada = imagenOriginal.Clone();
                             }
-                            
+
                             imagenRecortada.Mutate(x => x.Crop(new Rectangle(x1, y1, ancho, alto)));
-                            
+
                             // Convertir a bytes
                             using var memoryStream = new MemoryStream();
                             imagenRecortada.SaveAsPng(memoryStream);
@@ -306,7 +306,7 @@ namespace DotnetCoreYolo.AnalisisIntegrado
         {
             var nombreArchivo = System.IO.Path.GetFileNameWithoutExtension(rutaOriginal);
             var rutaSalida = System.IO.Path.Combine(directorioSalida, $"analisis_integrado_{nombreArchivo}_{DateTime.Now:yyyyMMdd_HHmmss}.png");
-            
+
             Directory.CreateDirectory(directorioSalida);
 
             using var imagenOriginal = Image.Load<Rgb24>(rutaOriginal);
@@ -318,81 +318,81 @@ namespace DotnetCoreYolo.AnalisisIntegrado
                 // Dibujar cajas delimitadoras y anotaciones para cada hoja procesada
                 imagenAnotada.Mutate(ctx =>
                 {
-                foreach (var hoja in hojasProcesadas)
-                {
-                    // Configurar color basado en si está clasificada o no
-                    var color = hoja.EstaClasificada ? Color.Green : Color.Red;
-                    var colorTexto = Color.White;
-                    
-                    // Dibujar rectángulo de la caja delimitadora
-                    var rectangulo = new RectangleF(hoja.CajaSuperior[0], hoja.CajaSuperior[1], 
-                                                   hoja.CajaSuperior[2] - hoja.CajaSuperior[0], 
-                                                   hoja.CajaSuperior[3] - hoja.CajaSuperior[1]);
-                    
-                    ctx.Draw(color, 2, rectangulo);
-                    
-                    // Preparar texto de anotación
-                    var textoAnotacion = $"ID: {hoja.Id}";
-                    if (hoja.EstaClasificada)
+                    foreach (var hoja in hojasProcesadas)
                     {
-                        textoAnotacion += $"\n{hoja.EtiquetaClasificacion} ({hoja.ConfianzaClasificacion:F2})";
+                        // Configurar color basado en si está clasificada o no
+                        var color = hoja.EstaClasificada ? Color.Green : Color.Red;
+                        var colorTexto = Color.White;
+
+                        // Dibujar rectángulo de la caja delimitadora
+                        var rectangulo = new RectangleF(hoja.CajaSuperior[0], hoja.CajaSuperior[1],
+                                                       hoja.CajaSuperior[2] - hoja.CajaSuperior[0],
+                                                       hoja.CajaSuperior[3] - hoja.CajaSuperior[1]);
+
+                        ctx.Draw(color, 2, rectangulo);
+
+                        // Preparar texto de anotación
+                        var textoAnotacion = $"ID: {hoja.Id}";
+                        if (hoja.EstaClasificada)
+                        {
+                            textoAnotacion += $"\n{hoja.EtiquetaClasificacion} ({hoja.ConfianzaClasificacion:F2})";
+                        }
+                        else
+                        {
+                            textoAnotacion += $"\n{hoja.NombreClase} ({hoja.Confianza:F2})";
+                        }
+                        textoAnotacion += $"\nÁrea: {hoja.PorcentajeArea:F1}%";
+
+                        // Calcular posición del texto (arriba de la caja)
+                        var posicionTexto = new PointF(hoja.CajaSuperior[0], Math.Max(0, hoja.CajaSuperior[1] - 60));
+
+                        // Crear opciones de texto - usar fuente con fallback para compatibilidad multiplataforma
+                        var font = SystemFonts.CreateFont("DejaVu Sans", 12) ??
+                                  SystemFonts.CreateFont("Liberation Sans", 12) ??
+                                  SystemFonts.CreateFont("Arial", 12) ??
+                                  SystemFonts.Families.First().CreateFont(12);
+                        var opcionesTexto = new RichTextOptions(font)
+                        {
+                            Origin = posicionTexto
+                        };
+
+                        // Dibujar fondo semi-transparente para el texto
+                        var tamanoTexto = TextMeasurer.MeasureSize(textoAnotacion, opcionesTexto);
+                        var rectanguloTexto = new RectangleF(posicionTexto.X, posicionTexto.Y, tamanoTexto.Width + 10, tamanoTexto.Height + 5);
+                        ctx.Fill(Color.FromRgba(0, 0, 0, 180), rectanguloTexto);
+
+                        // Dibujar texto
+                        ctx.DrawText(opcionesTexto, textoAnotacion, colorTexto);
+
+                        // Dibujar punto central
+                        var puntoCentral = new EllipsePolygon(hoja.Centro[0], hoja.Centro[1], 3);
+                        ctx.Fill(color, puntoCentral);
                     }
-                    else
+
+                    // Agregar información general en la esquina superior izquierda
+                    var infoGeneral = $"Total hojas: {hojasProcesadas.Count}";
+                    if (hojasProcesadas.Count(h => h.EstaClasificada) > 0)
                     {
-                        textoAnotacion += $"\n{hoja.NombreClase} ({hoja.Confianza:F2})";
+                        infoGeneral += $"\nClasificadas: {hojasProcesadas.Count(h => h.EstaClasificada)}";
                     }
-                    textoAnotacion += $"\nÁrea: {hoja.PorcentajeArea:F1}%";
-                    
-                    // Calcular posición del texto (arriba de la caja)
-                    var posicionTexto = new PointF(hoja.CajaSuperior[0], Math.Max(0, hoja.CajaSuperior[1] - 60));
-                    
-                    // Crear opciones de texto - usar fuente con fallback para compatibilidad multiplataforma
-                    var font = SystemFonts.CreateFont("DejaVu Sans", 12) ?? 
-                              SystemFonts.CreateFont("Liberation Sans", 12) ?? 
-                              SystemFonts.CreateFont("Arial", 12) ?? 
-                              SystemFonts.Families.First().CreateFont(12);
-                    var opcionesTexto = new RichTextOptions(font)
+
+                    var fontInfo = SystemFonts.CreateFont("DejaVu Sans", 12) ??
+                                  SystemFonts.CreateFont("Liberation Sans", 12) ??
+                                  SystemFonts.CreateFont("Arial", 12) ??
+                                  SystemFonts.Families.First().CreateFont(12);
+                    var opcionesInfo = new RichTextOptions(fontInfo)
                     {
-                        Origin = posicionTexto
+                        Origin = new PointF(15, 15)
                     };
-                    
-                    // Dibujar fondo semi-transparente para el texto
-                    var tamanoTexto = TextMeasurer.MeasureSize(textoAnotacion, opcionesTexto);
-                    var rectanguloTexto = new RectangleF(posicionTexto.X, posicionTexto.Y, tamanoTexto.Width + 10, tamanoTexto.Height + 5);
-                    ctx.Fill(Color.FromRgba(0, 0, 0, 180), rectanguloTexto);
-                    
-                    // Dibujar texto
-                    ctx.DrawText(opcionesTexto, textoAnotacion, colorTexto);
-                    
-                    // Dibujar punto central
-                    var puntoCentral = new EllipsePolygon(hoja.Centro[0], hoja.Centro[1], 3);
-                    ctx.Fill(color, puntoCentral);
-                }
-                
-                // Agregar información general en la esquina superior izquierda
-                var infoGeneral = $"Total hojas: {hojasProcesadas.Count}";
-                if (hojasProcesadas.Count(h => h.EstaClasificada) > 0)
-                {
-                    infoGeneral += $"\nClasificadas: {hojasProcesadas.Count(h => h.EstaClasificada)}";
-                }
-                
-                var fontInfo = SystemFonts.CreateFont("DejaVu Sans", 12) ?? 
-                              SystemFonts.CreateFont("Liberation Sans", 12) ?? 
-                              SystemFonts.CreateFont("Arial", 12) ?? 
-                              SystemFonts.Families.First().CreateFont(12);
-                var opcionesInfo = new RichTextOptions(fontInfo)
-                {
-                    Origin = new PointF(15, 15)
-                };
-                
-                var rectanguloInfo = new RectangleF(10, 10, 200, 50);
-                ctx.Fill(Color.FromRgba(0, 0, 0, 200), rectanguloInfo);
-                ctx.DrawText(opcionesInfo, infoGeneral, Color.White);
+
+                    var rectanguloInfo = new RectangleF(10, 10, 200, 50);
+                    ctx.Fill(Color.FromRgba(0, 0, 0, 200), rectanguloInfo);
+                    ctx.DrawText(opcionesInfo, infoGeneral, Color.White);
                 });
-                
+
                 imagenAnotada.SaveAsPng(rutaSalida);
             });
-            
+
             imagenAnotada.Dispose();
 
             return rutaSalida;
@@ -401,7 +401,7 @@ namespace DotnetCoreYolo.AnalisisIntegrado
         public async Task<List<ResultadoAnalisisIntegrado>> ProcesarImagenesBatchAsync(List<string> rutasImagenes, OpcionesAnalisisIntegrado opciones)
         {
             var resultados = new List<ResultadoAnalisisIntegrado>();
-            
+
             var tareas = rutasImagenes.Select(async rutaImagen =>
             {
                 try
@@ -425,6 +425,47 @@ namespace DotnetCoreYolo.AnalisisIntegrado
             return resultados.OrderBy(r => r.RutaImagen).ToList();
         }
 
+        public (int R, int G, int B) ObtenerColorRGBEnCentro(string rutaImagen)
+        {
+            if (!File.Exists(rutaImagen))
+            {
+                throw new FileNotFoundException($"No se encontró la imagen: {rutaImagen}");
+            }
+
+            using var imagen = Image.Load<Rgb24>(rutaImagen);
+            
+            // Calcular punto medio de la imagen
+            int centroX = imagen.Width / 2;
+            int centroY = imagen.Height / 2;
+            
+            return ObtenerColorRGBEnPunto(imagen, centroX, centroY);
+        }
+
+        public (int R, int G, int B) ObtenerColorRGBEnPunto(string rutaImagen, int x, int y)
+        {
+            if (!File.Exists(rutaImagen))
+            {
+                throw new FileNotFoundException($"No se encontró la imagen: {rutaImagen}");
+            }
+
+            using var imagen = Image.Load<Rgb24>(rutaImagen);
+            return ObtenerColorRGBEnPunto(imagen, x, y);
+        }
+
+        private (int R, int G, int B) ObtenerColorRGBEnPunto(Image<Rgb24> imagen, int x, int y)
+        {
+            // Validar que las coordenadas estén dentro de los límites de la imagen
+            if (x < 0 || x >= imagen.Width || y < 0 || y >= imagen.Height)
+            {
+                throw new ArgumentOutOfRangeException($"Coordenadas ({x}, {y}) fuera de los límites de la imagen ({imagen.Width}x{imagen.Height})");
+            }
+            
+            // Obtener el pixel en las coordenadas especificadas
+            var pixel = imagen[x, y];
+            
+            return (pixel.R, pixel.G, pixel.B);
+        }
+
         public void Dispose()
         {
             if (!_disposed)
@@ -439,15 +480,15 @@ namespace DotnetCoreYolo.AnalisisIntegrado
 
     public class OpcionesAnalisisIntegrado
     {
-        public string RutaModeloDetector { get; set; } = string.Empty;
-        public string RutaModeloClasificador { get; set; } = string.Empty;
+        public string RutaModeloDetector { get; set; } = "detector/detector.onnx";
+        public string RutaModeloClasificador { get; set; } = "clasificador/clasificador.onnx";
         public bool HabilitarDeteccion { get; set; } = true;
         public bool HabilitarClasificacion { get; set; } = true;
         public bool GuardarResultados { get; set; } = true;
         public string DirectorioSalida { get; set; } = ".";
-        public float UmbralConfianza { get; set; } = 0.01f;
-        public float UmbralIoU { get; set; } = 0.75f;
-        public int MaxDetecciones { get; set; } = 15;
+        public float UmbralConfianza { get; set; } = 0.015f;
+        public float UmbralIoU { get; set; } = 0.65f;
+        public int MaxDetecciones { get; set; } = 12;
         public bool GenerarReporte { get; set; } = true;
     }
 
@@ -486,14 +527,19 @@ namespace DotnetCoreYolo.AnalisisIntegrado
         public int Alto { get; set; }
         public float PorcentajeArea { get; set; }
         public float ProporcionalidadAspecto { get; set; }
-        
+
         // Datos de clasificación
         public string EtiquetaClasificacion { get; set; } = string.Empty;
         public float ConfianzaClasificacion { get; set; }
         public bool EstaClasificada { get; set; }
         public TimeSpan TiempoClasificacion { get; set; }
-        
+
         // Datos de imagen
         public byte[] DatosImagen { get; set; } = Array.Empty<byte>();
     }
+    
+
+
+
+
 }
